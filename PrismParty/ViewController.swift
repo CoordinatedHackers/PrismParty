@@ -1,10 +1,13 @@
 import UIKit
 import CoreMotion
+import AudioToolbox.AudioServices
 
 class ViewController: UIViewController {
     
     let motionManager = CMMotionManager()
     var displayLink: CADisplayLink!
+    var latched = false
+    var latchedRotation: CGFloat?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -18,7 +21,18 @@ class ViewController: UIViewController {
         // http://nshipster.com/cmdevicemotion/
         let rotation = atan2(deviceMotion.gravity.x, deviceMotion.gravity.y) / (2 * M_PI) + 0.5
         
-        self.view.backgroundColor = UIColor(hue: CGFloat(rotation), saturation: 1, brightness: 1, alpha: 1)
+        if deviceMotion.userAcceleration.z > 1.5 && !latched {
+            latched = true
+            latchedRotation = CGFloat(rotation)
+            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+            print("rotation: \(rotation)")
+        }
+
+        if let latchedRotation = latchedRotation {
+            self.view.backgroundColor = UIColor(hue: latchedRotation, saturation: 1, brightness: 1, alpha: 1)
+        } else {
+            self.view.backgroundColor = UIColor(hue: CGFloat(rotation), saturation: 1, brightness: 1, alpha: 1)
+        }
     }
     
     override func prefersStatusBarHidden() -> Bool {
